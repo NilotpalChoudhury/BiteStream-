@@ -16,6 +16,16 @@ CREATE INDEX IF NOT EXISTS idx_orders_user_created_at
 CREATE INDEX IF NOT EXISTS idx_orders_status_created_at
     ON orders (status, created_at DESC);
 
+-- Workflow 2 (06_window_analytics.sql) reads every DELIVERED order in the last
+-- 90 days (~75% of the table). A plain index loses to a Seq Scan at that
+-- selectivity, so this covering partial index lets the query run as an
+-- Index Only Scan: only DELIVERED rows, ordered by created_at, with the two
+-- columns the query needs (restaurant_id, total_amount) stored in the index.
+CREATE INDEX IF NOT EXISTS idx_orders_delivered_created_at_covering
+    ON orders (created_at)
+    INCLUDE (restaurant_id, total_amount)
+    WHERE status = 'DELIVERED';
+
 CREATE INDEX IF NOT EXISTS idx_wallet_audit_user_timestamp
     ON wallet_audit_logs (user_id, timestamp DESC);
 

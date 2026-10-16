@@ -1,131 +1,121 @@
 {
   "database": "bitestream",
+  "description": "MongoDB side of BiteStream. Flexible / high-volume data lives here; money and orders live in PostgreSQL. restaurant_id and user_id are the PostgreSQL UUIDs stored as strings, so the two databases join on them in the API layer.",
+  "setup_script": "mongo/01_collections_and_indexes.js",
   "collections": {
-    "menus": {
-      "description": "Flexible restaurant menu catalog",
+    "Menus": {
+      "purpose": "Flexible catalog: one document per restaurant with nested categories, items and optional customization add-ons.",
+      "seeded_by": "data_generation/menus_seeder.py (one per PostgreSQL restaurant, 200 by default)",
       "fields": {
-        "_id": "UUID/string",
-        "restaurant_id": "integer",
-        "restaurant_name": "string",
+        "_id": "ObjectId",
+        "restaurant_id": "string, PostgreSQL restaurants.id (UUID). Unique.",
+        "restaurant_name": "string, same as PostgreSQL restaurants.name",
+        "location": "GeoJSON Point {type: 'Point', coordinates: [longitude, latitude]}, copied from PostgreSQL. Used as the $geoNear origin in Workflow 3.",
         "categories": [
           {
-            "name": "string",
+            "name": "string, e.g. 'Biryani'",
             "items": [
               {
-                "item_id": "UUID/string",
+                "item_id": "string (UUID)",
                 "name": "string",
                 "description": "string",
-                "price": "number",
-                "available": "boolean",
-                "customization_addons": [
-                  {
-                    "name": "string",
-                    "price": "number"
-                  }
-                ]
+                "price": "number >= 0",
+                "available": "bool",
+                "customization_addons": "OPTIONAL array of {name: string, price: number}",
+                "dietary_tags": "OPTIONAL array of string"
               }
             ]
           }
         ],
-        "updated_at": "datetime"
+        "updated_at": "date"
       },
-      "indexes": [
-        {
-          "key": {
-            "restaurant_id": 1
-          },
-          "name": "idx_menus_restaurant"
-        },
-        {
-          "key": {
-            "categories.name": 1
-          },
-          "name": "idx_menus_category"
-        }
-      ]
-    },
-    "reviews": {
-      "description": "Restaurant reviews with ratings and sentiment tags",
-      "fields": {
-        "_id": "UUID/string",
-        "restaurant_id": "integer",
-        "user_id": "UUID/string",
-        "rating": "integer (1-5)",
-        "comment": "string",
-        "sentiment_tags": [
-          "string"
+      "validator": "$jsonSchema requires restaurant_id, restaurant_name, categories[]. Each category requires name and items[]; each item requires name and price >= 0. Optional fields are allowed (flexible schema).",
+      "indexes": {
+        "idx_menus_restaurant": "{restaurant_id: 1}, unique",
+        "idx_menus_category": "{'categories.name': 1} (multikey)"
+      },
+      "example": {
+        "restaurant_id": "00000000-0000-4000-8000-0000000000a1",
+        "restaurant_name": "Demo Restaurant (Charminar)",
+        "location": { "type": "Point", "coordinates": [78.4747, 17.3616] },
+        "categories": [
+          {
+            "name": "Biryani",
+            "items": [
+              {
+                "item_id": "8b9d2434-e465-4150-bd9c-66b3ad3c2d6d",
+                "name": "Mutton Biryani",
+                "description": "Freshly made mutton biryani, packed for delivery.",
+                "price": 106.95,
+                "available": true,
+                "customization_addons": [{ "name": "Extra raita", "price": 30 }]
+              }
+            ]
+          }
         ],
-        "created_at": "datetime"
-      },
-      "indexes": [
-        {
-          "key": {
-            "restaurant_id": 1
-          },
-          "name": "idx_reviews_restaurant"
-        },
-        {
-          "key": {
-            "rating": 1
-          },
-          "name": "idx_reviews_rating"
-        }
-      ]
+        "updated_at": "2026-10-13T19:36:34.470Z"
+      }
     },
-    "driverPings": {
-      "description": "Real-time driver geospatial location logs",
+    "Reviews": {
+      "purpose": "Structured reviews with ratings, sentiment tags and timestamps. Input to Workflow 4 ($facet).",
+      "seeded_by": "data_generation/reviews_seeder.py (110,000 by default, spread over the last 365 days)",
       "fields": {
-        "_id": "UUID/string",
-        "driver_id": "integer",
-        "active": "boolean",
-        "location": {
-          "type": "GeoJSON Point",
-          "coordinates": [
-            "longitude",
-            "latitude"
-          ]
-        },
-        "created_at": "datetime"
+        "_id": "ObjectId",
+        "restaurant_id": "string, PostgreSQL restaurants.id (UUID)",
+        "user_id": "string, PostgreSQL users.id (UUID)",
+        "rating": "int 1..5",
+        "comment": "string",
+        "sentiment_tags": "array of string, e.g. ['tasty', 'late delivery']",
+        "created_at": "date"
       },
-      "indexes": [
-        {
-          "key": {
-            "location": "2dsphere"
-          },
-          "name": "idx_driverPings_location_2dsphere"
-        },
-        {
-          "key": {
-            "created_at": 1
-          },
-          "name": "idx_driverPings_created_at_ttl",
-          "expireAfterSeconds": 7200
-        },
-        {
-          "key": {
-            "active": 1
-          },
-          "name": "idx_driverPings_active"
-        }
-      ]
+      "validator": "$jsonSchema requires restaurant_id, user_id, rating (int 1..5), sentiment_tags (array of string), created_at (date).",
+      "indexes": {
+        "idx_reviews_restaurant": "{restaurant_id: 1}. Used by the $match in Workflow 4.",
+        "idx_reviews_rating": "{rating: 1}"
+      },
+      "example": {
+        "restaurant_id": "00000000-0000-4000-8000-0000000000a1",
+        "user_id": "f455af73-c0a7-4d9c-a5ac-cd5a48f18eed",
+        "rating": 2,
+        "comment": "Food arrived cold.",
+        "sentiment_tags": ["average", "wrong order"],
+        "created_at": "2026-05-05T13:33:48.925Z"
+      }
+    },
+    "DriverPings": {
+      "purpose": "Real-time driver location log (GeoJSON Point). Input to Workflow 3 ($geoNear). Pings expire after 2 hours.",
+      "seeded_by": "data_generation/mongo_seeder.py (510,000 pings in Hyderabad, timestamped within 10 minutes of seeding)",
+      "fields": {
+        "_id": "ObjectId",
+        "driver_id": "int 1..2000 (drivers are not modelled in PostgreSQL)",
+        "active": "bool, true if the driver is available for a delivery",
+        "location": "GeoJSON Point {type: 'Point', coordinates: [longitude, latitude]} (longitude first!)",
+        "created_at": "date, drives the TTL index"
+      },
+      "validator": "$jsonSchema requires driver_id (int), active (bool), location (Point with exactly 2 doubles), created_at (date).",
+      "indexes": {
+        "idx_driverPings_location_2dsphere": "{location: '2dsphere'}. Required by $geoNear.",
+        "idx_driverPings_created_at_ttl": "{created_at: 1}, expireAfterSeconds: 7200 (2-hour TTL)",
+        "idx_driverPings_active": "{active: 1}"
+      },
+      "example": {
+        "driver_id": 1310,
+        "active": true,
+        "location": { "type": "Point", "coordinates": [78.3075032265668, 17.47379937946026] },
+        "created_at": "2026-10-13T19:34:12.983Z"
+      }
     }
   },
-  "workflows": {
-    "workflow3": {
-      "name": "Nearest Active Driver",
-      "collection": "driverPings",
-      "operation": "$geoNear",
-      "criteria": "active drivers within 5 km of restaurant coordinates"
+  "pipelines": {
+    "workflow3_nearest_active_driver": {
+      "file": "mongo/02_workflow3_geonear.js",
+      "stages": "Menus.findOne(restaurant) → $geoNear (near restaurant.location, maxDistance 5000 m, query {active: true}, spherical) → $group by driver_id keeping the nearest ping → $sort distance → $limit 10 → $project distance_km",
+      "index_used": "idx_driverPings_location_2dsphere (GEO_NEAR_2DSPHERE)"
     },
-    "workflow4": {
-      "name": "Multi-Faceted Review Analytics",
-      "collection": "reviews",
-      "operation": "$facet",
-      "outputs": [
-        "rating distribution (1-5 stars)",
-        "most frequent sentiment tags via $unwind",
-        "overall average rating"
-      ]
+    "workflow4_review_facets": {
+      "file": "mongo/03_workflow4_facet.js",
+      "stages": "$match restaurant_id → $facet {rating_distribution: $group by rating; most_frequent_tags: $unwind sentiment_tags → $group → $sort → $limit 10; overall_average_rating: $group $avg}",
+      "index_used": "idx_reviews_restaurant (IXSCAN)"
     }
   }
 }

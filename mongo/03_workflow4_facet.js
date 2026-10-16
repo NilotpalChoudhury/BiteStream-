@@ -1,8 +1,9 @@
 use("bitestream");
 
-const restaurantId = 1;
+// Restaurant ids are PostgreSQL UUIDs (strings). Default: the demo restaurant.
+const restaurantId = "00000000-0000-4000-8000-0000000000a1";
 
-const results = db.reviews.aggregate([
+const results = db.Reviews.aggregate([
     {
         $match: {
             restaurant_id: restaurantId

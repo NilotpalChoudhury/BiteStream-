@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="800" viewBox="0 0 1260 800" font-family="Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a94a6"/></marker></defs>
+<text x="40" y="45" font-size="24" font-weight="700" fill="#1f2937">BiteStream: PostgreSQL schema (ERD)</text>
+<text x="40" y="70" font-size="13" fill="#4b5563">sql/01_schema_ddl.sql · 02_indexes.sql · 03_triggers_and_audit.sql · 05_materialized_views.sql</text>
+<rect x="40" y="90" width="340" height="114" rx="8" fill="#ffffff" stroke="#1f3a5f" stroke-width="1.5" />
+<path d="M40,98 a8,8 0 0 1 8,-8 h324 a8,8 0 0 1 8,8 v26 h-340 z" fill="#1f3a5f"/>
+<text x="52" y="112" font-size="14" font-weight="700" fill="#ffffff">users</text>
+<text x="370" y="112" font-size="10" fill="#dbe4f0" text-anchor="end">TABLE</text>
+<text x="52" y="140" font-size="12.5" font-weight="700" fill="#b45309">id</text>
+<text x="368" y="140" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID PK</text>
+<rect x="41" y="148" width="338" height="24" fill="#f3f6fa"/>
+<text x="52" y="164" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="368" y="164" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">VARCHAR(120) NOT NULL</text>
+<text x="52" y="188" font-size="12.5" font-weight="400" fill="#111827">wallet_balance</text>
+<text x="368" y="188" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">DECIMAL(10,2) CHECK &gt;= 0</text>
+<rect x="40" y="420" width="340" height="186" rx="8" fill="#ffffff" stroke="#1f3a5f" stroke-width="1.5" />
+<path d="M40,428 a8,8 0 0 1 8,-8 h324 a8,8 0 0 1 8,8 v26 h-340 z" fill="#1f3a5f"/>
+<text x="52" y="442" font-size="14" font-weight="700" fill="#ffffff">wallet_audit_logs</text>
+<text x="370" y="442" font-size="10" fill="#dbe4f0" text-anchor="end">TABLE · insert-only</text>
+<text x="52" y="470" font-size="12.5" font-weight="700" fill="#b45309">id</text>
+<text x="368" y="470" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID PK</text>
+<rect x="41" y="478" width="338" height="24" fill="#f3f6fa"/>
+<text x="52" y="494" font-size="12.5" font-weight="700" fill="#1d4ed8">user_id</text>
+<text x="368" y="494" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID FK → users.id</text>
+<text x="52" y="518" font-size="12.5" font-weight="400" fill="#111827">amount_changed</text>
+<text x="368" y="518" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">DECIMAL(10,2) CHECK &lt;&gt; 0</text>
+<rect x="41" y="526" width="338" height="24" fill="#f3f6fa"/>
+<text x="52" y="542" font-size="12.5" font-weight="400" fill="#111827">action_type</text>
+<text x="368" y="542" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">VARCHAR(10) DEBIT | CREDIT</text>
+<text x="52" y="566" font-size="12.5" font-weight="400" fill="#111827">balance_after</text>
+<text x="368" y="566" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">DECIMAL(10,2) CHECK &gt;= 0</text>
+<rect x="41" y="574" width="338" height="24" fill="#f3f6fa"/>
+<text x="52" y="590" font-size="12.5" font-weight="400" fill="#111827">timestamp</text>
+<text x="368" y="590" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">TIMESTAMPTZ DEFAULT NOW()</text>
+<rect x="440" y="90" width="400" height="186" rx="8" fill="#ffffff" stroke="#1f3a5f" stroke-width="1.5" />
+<path d="M440,98 a8,8 0 0 1 8,-8 h384 a8,8 0 0 1 8,8 v26 h-400 z" fill="#1f3a5f"/>
+<text x="452" y="112" font-size="14" font-weight="700" fill="#ffffff">orders</text>
+<text x="830" y="112" font-size="10" fill="#dbe4f0" text-anchor="end">TABLE</text>
+<text x="452" y="140" font-size="12.5" font-weight="700" fill="#b45309">id</text>
+<text x="828" y="140" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID PK</text>
+<rect x="441" y="148" width="398" height="24" fill="#f3f6fa"/>
+<text x="452" y="164" font-size="12.5" font-weight="700" fill="#1d4ed8">user_id</text>
+<text x="828" y="164" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID FK → users.id</text>
+<text x="452" y="188" font-size="12.5" font-weight="700" fill="#1d4ed8">restaurant_id</text>
+<text x="828" y="188" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID FK → restaurants.id</text>
+<rect x="441" y="196" width="398" height="24" fill="#f3f6fa"/>
+<text x="452" y="212" font-size="12.5" font-weight="400" fill="#111827">total_amount</text>
+<text x="828" y="212" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">DECIMAL(10,2) CHECK &gt; 0</text>
+<text x="452" y="236" font-size="12.5" font-weight="400" fill="#111827">status</text>
+<text x="828" y="236" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">PREPARING | DELIVERING | DELIVERED</text>
+<rect x="441" y="244" width="398" height="24" fill="#f3f6fa"/>
+<text x="452" y="260" font-size="12.5" font-weight="400" fill="#111827">created_at</text>
+<text x="828" y="260" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">TIMESTAMPTZ DEFAULT NOW()</text>
+<rect x="900" y="90" width="320" height="138" rx="8" fill="#ffffff" stroke="#1f3a5f" stroke-width="1.5" />
+<path d="M900,98 a8,8 0 0 1 8,-8 h304 a8,8 0 0 1 8,8 v26 h-320 z" fill="#1f3a5f"/>
+<text x="912" y="112" font-size="14" font-weight="700" fill="#ffffff">restaurants</text>
+<text x="1210" y="112" font-size="10" fill="#dbe4f0" text-anchor="end">TABLE</text>
+<text x="912" y="140" font-size="12.5" font-weight="700" fill="#b45309">id</text>
+<text x="1208" y="140" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID PK</text>
+<rect x="901" y="148" width="318" height="24" fill="#f3f6fa"/>
+<text x="912" y="164" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="1208" y="164" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">VARCHAR(160) NOT NULL</text>
+<text x="912" y="188" font-size="12.5" font-weight="400" fill="#111827">latitude</text>
+<text x="1208" y="188" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">FLOAT8 CHECK -90..90</text>
+<rect x="901" y="196" width="318" height="24" fill="#f3f6fa"/>
+<text x="912" y="212" font-size="12.5" font-weight="400" fill="#111827">longitude</text>
+<text x="1208" y="212" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">FLOAT8 CHECK -180..180</text>
+<rect x="900" y="420" width="320" height="162" rx="8" fill="#ffffff" stroke="#8a94a6" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M900,428 a8,8 0 0 1 8,-8 h304 a8,8 0 0 1 8,8 v26 h-320 z" fill="#6b7280"/>
+<text x="912" y="442" font-size="14" font-weight="700" fill="#ffffff">mv_restaurant_revenue_summary</text>
+<text x="1210" y="442" font-size="10" fill="#dbe4f0" text-anchor="end">MV</text>
+<text x="912" y="470" font-size="12.5" font-weight="700" fill="#b45309">restaurant_id</text>
+<text x="1208" y="470" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID · UNIQUE idx</text>
+<rect x="901" y="478" width="318" height="24" fill="#f3f6fa"/>
+<text x="912" y="494" font-size="12.5" font-weight="400" fill="#111827">restaurant_name</text>
+<text x="1208" y="494" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">VARCHAR</text>
+<text x="912" y="518" font-size="12.5" font-weight="400" fill="#111827">completed_order_count</text>
+<text x="1208" y="518" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">BIGINT</text>
+<rect x="901" y="526" width="318" height="24" fill="#f3f6fa"/>
+<text x="912" y="542" font-size="12.5" font-weight="400" fill="#111827">total_revenue</text>
+<text x="1208" y="542" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">DECIMAL(14,2)</text>
+<text x="912" y="566" font-size="12.5" font-weight="400" fill="#111827">last_completed_order_at</text>
+<text x="1208" y="566" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">TIMESTAMPTZ</text>
+<rect x="440" y="450" width="400" height="138" rx="8" fill="#ffffff" stroke="#8a94a6" stroke-width="1.5" stroke-dasharray="6 4"/>
+<path d="M440,458 a8,8 0 0 1 8,-8 h384 a8,8 0 0 1 8,8 v26 h-400 z" fill="#6b7280"/>
+<text x="452" y="472" font-size="14" font-weight="700" fill="#ffffff">mv_restaurant_daily_revenue</text>
+<text x="830" y="472" font-size="10" fill="#dbe4f0" text-anchor="end">MV</text>
+<text x="452" y="500" font-size="12.5" font-weight="700" fill="#b45309">restaurant_id</text>
+<text x="828" y="500" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">UUID ┐ UNIQUE idx</text>
+<rect x="441" y="508" width="398" height="24" fill="#f3f6fa"/>
+<text x="452" y="524" font-size="12.5" font-weight="700" fill="#b45309">revenue_date</text>
+<text x="828" y="524" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">DATE  ┘</text>
+<text x="452" y="548" font-size="12.5" font-weight="400" fill="#111827">order_count</text>
+<text x="828" y="548" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">BIGINT</text>
+<rect x="441" y="556" width="398" height="24" fill="#f3f6fa"/>
+<text x="452" y="572" font-size="12.5" font-weight="400" fill="#111827">daily_revenue</text>
+<text x="828" y="572" font-size="11" fill="#4b5563" text-anchor="end" font-family="Menlo, monospace">DECIMAL(14,2)</text>
+<path d="M380,136.0 C410,136.0 410,160.0 440,160.0" stroke="#1f3a5f" stroke-width="1.5" fill="none"/>
+<path d="M440,152.0 L428,160.0 L440,168.0 M424,152.0 L424,168.0" stroke="#1f3a5f" stroke-width="1.5" fill="none"/>
+<text x="384" y="130.0" font-size="11" fill="#1f3a5f">1</text>
+<path d="M900,136.0 C870,136.0 870,184.0 840,184.0" stroke="#1f3a5f" stroke-width="1.5" fill="none"/>
+<path d="M840,176.0 L852,184.0 L840,192.0 M856,176.0 L856,192.0" stroke="#1f3a5f" stroke-width="1.5" fill="none"/>
+<text x="888" y="130.0" font-size="11" fill="#1f3a5f">1</text>
+<path d="M210,204 L210,420" stroke="#1f3a5f" stroke-width="1.5" fill="none"/>
+<path d="M202,420 L210,408 L218,420 M202,404 L218,404" stroke="#1f3a5f" stroke-width="1.5" fill="none"/>
+<text x="218" y="220" font-size="11" fill="#1f3a5f">1</text>
+<text x="222" y="316" font-size="11.5" fill="#7c2d12">trg_users_wallet_balance_audit: AFTER UPDATE OF</text>
+<text x="222" y="332" font-size="11.5" fill="#7c2d12">wallet_balance → INSERT one DEBIT/CREDIT row</text>
+<path d="M640,276 L640,450" stroke="#8a94a6" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#arr)"/>
+<text x="648" y="367" font-size="11" fill="#6b7280">DELIVERED orders, per day</text>
+<path d="M1060,228 L1060,420" stroke="#8a94a6" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#arr)"/>
+<text x="1068" y="320" font-size="11" fill="#6b7280">restaurants LEFT JOIN</text>
+<text x="1068" y="336" font-size="11" fill="#6b7280">DELIVERED orders</text>
+<rect x="40" y="618" width="1180" height="136" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="56" y="640" font-size="13" font-weight="700" fill="#1f2937">Key constraints, indexes and triggers</text>
+<text x="56" y="660" font-size="12" font-weight="400" fill="#1f2937">• idx_active_user_order: UNIQUE (user_id) WHERE status IN ('PREPARING','DELIVERING'). At most one active order per user.</text>
+<text x="56" y="680" font-size="12" font-weight="400" fill="#1f2937">• trg_wallet_audit_immutable: BEFORE UPDATE OR DELETE on wallet_audit_logs → error (the audit trail is insert-only).</text>
+<text x="56" y="700" font-size="12" font-weight="400" fill="#1f2937">• sp_execute_checkout (Workflow 1): own REPEATABLE READ txn → lock user → debit (CHECK) → insert order → COMMIT / ROLLBACK.</text>
+<text x="56" y="720" font-size="12" font-weight="400" fill="#1f2937">• idx_orders_delivered_created_at_covering: (created_at) INCLUDE (restaurant_id, total_amount) WHERE status='DELIVERED'. Index Only Scan for Workflow 2.</text>
+<text x="56" y="740" font-size="12" font-weight="400" fill="#1f2937">• Both views have a UNIQUE index so REFRESH MATERIALIZED VIEW CONCURRENTLY works (fn_refresh_restaurant_revenue_summary / _daily_revenue).</text>
+<text x="40" y="788" font-size="11" fill="#6b7280">PK = primary key (amber) · FK = foreign key (blue) · crow's foot = "many" side · dashed boxes (MV) = materialized views</text>
+</svg>

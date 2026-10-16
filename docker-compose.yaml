@@ -1,0 +1,131 @@
+services:
+  frontend:
+    build: ./web
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: /api
+      API_PROXY_TARGET: http://backend:8000
+    depends_on:
+      - backend
+    command: yarn dev --host 0.0.0.0 --port 5173 --strictPort
+    develop:
+      watch:
+        - action: sync
+          path: ./web/src
+          target: /app-f/src
+          initial_sync: true
+        - action: sync
+          path: ./web/public
+          target: /app-f/public
+          initial_sync: true
+        - action: sync
+          path: ./web/index.html
+          target: /app-f/index.html
+          initial_sync: true
+        - action: sync+restart
+          path: ./web/vite.config.js
+          target: /app-f/vite.config.js
+          initial_sync: true
+        - action: rebuild
+          path: ./web/package.json
+        - action: rebuild
+          path: ./web/yarn.lock
+        - action: rebuild
+          path: ./web/Dockerfile
+        - action: rebuild
+          path: ./web/.dockerignore
+
+  backend:
+    build: ./api
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${PGDATABASE:-bitestream}
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-postgres}
+      MONGO_URI: mongodb://mongo:27017/
+      MONGO_DB: bitestream
+      SQL_DIR: /sql
+    volumes:
+      - ./sql:/sql:ro
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app-b
+    develop:
+      watch:
+        - action: sync
+          path: ./api
+          target: /app-b
+          initial_sync: true
+          ignore:
+            - __pycache__/
+            - .venv/
+            - "*.pyc"
+        - action: rebuild
+          path: ./api/requirements.txt
+        - action: rebuild
+          path: ./api/Dockerfile
+
+  postgres:
+    image: postgres:18-alpine
+    pull_policy: never
+    ports:
+      - "${PGPORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-bitestream}
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  mongo:
+    image: mongo:7.0.40-jammy
+    pull_policy: never
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: bitestream
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo/01_collections_and_indexes.js:/docker-entrypoint-initdb.d/01_collections_and_indexes.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Keeps the Workflow 3 map alive: inserts fresh DriverPings every few seconds
+  # (seeded pings expire after 2 h). Reuses the API image, which has pymongo.
+  live-pings:
+    build: ./api
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://mongo:27017/
+      MONGO_DB: bitestream
+      LIVE_PINGS_INTERVAL: ${LIVE_PINGS_INTERVAL:-5}
+      LIVE_PINGS_DRIVERS: ${LIVE_PINGS_DRIVERS:-150}
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./data_generation:/data_generation:ro
+    command: python /data_generation/live_pings.py
+    restart: unless-stopped   # after editing live_pings.py: docker compose restart live-pings
+
+volumes:
+  postgres-data:
+  mongo-data:
